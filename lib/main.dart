@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_list/the-list.dart';
+import 'package:url_list/url-cell.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -31,6 +33,53 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String theTextBoxValue = '';
+  ImageProvider theWebIcon = AssetImage('images/placeholder.png');
+  Color theColor = Color(0xFF8A8A8A);
+  int theContentLengthInBytes = 0;
+  bool isStart = true;
+  bool isReset = false;
+
+  Future startTheUrl(int index) async {
+    var url = Uri.parse(TheList.theList[index].theURL);
+if(!(TheList.theList[index].theURL).contains('http')){
+  TheList.theList[index].sizeColor = Colors.redAccent;
+  TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
+  TheList.theList[index].doneIconColor = Colors.redAccent;
+  return;
+}
+    var response = await http.get(url);
+    if (response.statusCode == 200) {
+      print('STATUS ${response.statusCode}');
+      print(response.headers['content-length']);
+      if (response.headers['content-length'] != null) {
+        theContentLengthInBytes =
+            int.parse(response.headers['content-length'] ?? "");
+      }
+      int theContentLengthInKB = (theContentLengthInBytes ~/ 1000).toInt();
+      print('$index LENGTH $theContentLengthInBytes');
+
+      setState(() {
+        if (response.statusCode != 200) {
+          TheList.theList[index].theSize = 'ERROR ${response.statusCode}';
+          TheList.theList[index].sizeColor = Colors.redAccent;
+          TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
+          TheList.theList[index].doneIconColor = Colors.redAccent;
+        } else if (response.statusCode == 200)
+          TheList.theList[index].theSize = 'Size: ${theContentLengthInKB}KB';
+        TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
+        TheList.theList[index].doneIconColor = Colors.greenAccent;
+      });
+    } else if (response.statusCode != 200) {
+      setState(() {
+        TheList.theList[index].theSize = 'ERROR ${response.statusCode}';
+        TheList.theList[index].sizeColor = Colors.redAccent;
+        TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
+        TheList.theList[index].doneIconColor = Colors.redAccent;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,23 +105,77 @@ class _MyHomePageState extends State<MyHomePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextButton(
-                          onPressed: () {
-                            print('Btn Pressed');
-                          },
-                          child: const Text(
-                            'START',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                        Visibility(
+                          visible: isStart,
+                          child: TextButton(
+                            onPressed: () {
+                              isStart = false;
+                              isReset = true;
+                              print('Btn Pressed');
+
+                              for (var index = 0;
+                                  index <= TheList.theList.length - 1;
+                                  index++) {
+                                TheList.theList[index].favIcon = NetworkImage(
+                                    '${TheList.theList[index].theURL}/favicon.ico');
+                                startTheUrl(index);
+                              }
+                            },
+                            child: const Text(
+                              'START',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: const Color(0xFF1C1D2F),
+                              minimumSize: const Size(35, 35),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(10.0),
+                                ),
+                              ),
                             ),
                           ),
-                          style: TextButton.styleFrom(
-                            backgroundColor: const Color(0xFF1C1D2F),
-                            minimumSize: const Size(35, 35),
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(10.0),
+                        ),
+                        Visibility(
+                          visible: isReset,
+                          child: TextButton(
+                            onPressed: () {
+                              isStart = true;
+                              isReset = false;
+                              for (var index = 0;
+                                  index <= TheList.theList.length - 1;
+                                  index++) {
+                                TheList.theList[index].favIcon =
+                                    AssetImage('images/placeholder.png');
+                                TheList.theList[index].theIcon =
+                                    CupertinoIcons.bars;
+                                TheList.theList[index].doneIconColor =
+                                    Color(0xFF8A8A8A);
+                                TheList.theList[index].sizeColor =
+                                    Color(0xFF8A8A8A);
+                                TheList.theList[index].theSize = 'Unknown Size';
+                              }
+                              setState(() {
+
+                              });
+                            },
+                            child: const Text(
+                              'RESET',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: const Color(0xFF1C1D2F),
+                              minimumSize: const Size(35, 35),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(10.0),
+                                ),
                               ),
                             ),
                           ),
@@ -80,6 +183,60 @@ class _MyHomePageState extends State<MyHomePage> {
                         TextButton(
                           onPressed: () {
                             print('Add Btn Pressed');
+                            showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                      title: Text('Add a URL to the list'),
+                                      content: Container(
+                                        width: 100,
+                                        height: 150,
+                                        child: TextField(
+                                          decoration: const InputDecoration(
+                                            labelText: 'Link:',
+                                            labelStyle: TextStyle(
+                                                color: Color(0xFF1C1D2F)),
+                                            focusedBorder: UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Color(0xFF1C1D2F))),
+                                            enabledBorder: UnderlineInputBorder(
+                                              borderSide: BorderSide(
+                                                  color: Color(0xFF1C1D2F)),
+                                            ),
+                                            border: UnderlineInputBorder(
+                                              borderSide: BorderSide(
+                                                  color: Color(0xFF1C1D2F)),
+                                            ),
+                                            hintText: 'https://www.google.com',
+                                            fillColor: Color(0xFF1C1D2F),
+                                          ),
+                                          cursorColor: Color(0xFF1C1D2F),
+                                          onChanged: (value) {
+                                            theTextBoxValue = value;
+                                          },
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          child: Text('ADD'),
+                                          onPressed: () {
+                                            print(theTextBoxValue);
+
+                                            setState(() {
+                                              TheList.theList.add(URLCell(
+                                                theURL: theTextBoxValue,
+                                                theSize: 'Unknown',
+                                                theIcon: CupertinoIcons.bars,
+                                                favIcon: theWebIcon,
+                                                sizeColor: Color(0xFF8A8A8A),
+                                                doneIconColor:
+                                                    Color(0xFF8A8A8A),
+                                              ));
+                                            });
+                                            Navigator.pop(context);
+                                          },
+                                        )
+                                      ],
+                                    ));
                           },
                           child: const Icon(
                             CupertinoIcons.add,
@@ -112,7 +269,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 return Padding(
                   padding: const EdgeInsets.only(left: 10.0, right: 10),
                   child: Container(
-                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(width: 1.0, color: Colors.black38),)),
+                    decoration: const BoxDecoration(
+                        border: Border(
+                      bottom: BorderSide(width: 1.0, color: Colors.black38),
+                    )),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Row(
@@ -124,20 +284,18 @@ class _MyHomePageState extends State<MyHomePage> {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Container(
-                                  width:40,
+                                  width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.black38,width: 1.0),
+                                    border: Border.all(
+                                        color: Colors.black38, width: 1.0),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const SizedBox(
+                                  child: SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: FadeInImage(
-                                      placeholder: AssetImage('images/placeholder.png'),
-                                      image: AssetImage('images/placeholder.png'),
-                                      // image: NetworkImage(widget.favIcon)
-                                    ),
+                                    child: Image(
+                                        image: TheList.theList[index].favIcon),
                                   ),
                                 ),
                               ),
@@ -145,20 +303,34 @@ class _MyHomePageState extends State<MyHomePage> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(TheList.theList[index].theURL, style: TextStyle(fontSize: 15,),),
-                                  Text(TheList.theList[index].theSize, style: TextStyle(fontSize: 10,),),
+                                  Text(
+                                    TheList.theList[index].theURL,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Text(
+                                    TheList.theList[index].theSize,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: TheList.theList[index].sizeColor,
+                                    ),
+                                  ),
                                 ],
                               )
                             ],
                           ),
                           Container(
-                              width:30,
-                              height:30,
+                              width: 30,
+                              height: 30,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
-                                color: Color(0xFF8A8A8A)
+                                color: TheList.theList[index].doneIconColor,
                               ),
-                              child: Icon(TheList.theList[index].theIcon,color: Colors.white,)),
+                              child: Icon(
+                                TheList.theList[index].theIcon,
+                                color: Colors.white,
+                              )),
                         ],
                       ),
                     ),

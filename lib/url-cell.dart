@@ -9,10 +9,14 @@ URLCell({
   required this.theSize,
   required this.theIcon,
   required this.favIcon,
+  required this.sizeColor,
+  required this.doneIconColor,
 });
-   String favIcon;
+   ImageProvider favIcon;
    String theURL;
    String theSize;
    IconData theIcon;
+   Color sizeColor;
+   Color doneIconColor;
 
 }
