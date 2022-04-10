@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:url_list/url-cell.dart';
 
+//CLASS WITH DEFAULT LIST ITEMS
 class TheList {
   static List<URLCell> theList = [
     URLCell(

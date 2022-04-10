@@ -33,10 +33,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  //INITIALIZING UI VARIABLES
   String theTextBoxValue = '';
   ImageProvider theWebIcon = const AssetImage('images/placeholder.png');
   Color theColor = const Color(0xFF8A8A8A);
   int theContentLengthInBytes = 0;
+
+  //VARS FOR CHANGING BTNS AFTER AND BEFORE PROSSESSING
   bool isStart = true;
   bool isReset = false;
   String btnText = 'Processing';
@@ -44,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   //Function for HTTP GET and updating the UI Accordingly
   Future startTheUrlProcessing(int index) async {
     var url = Uri.parse(TheList.theList[index].theURL);
+    //IF URL IS NOT VALID (TO AVIOD ERRORS IN THE RESPONSE
     if (!(TheList.theList[index].theURL).contains('http')) {
       setState(() {
         TheList.theList[index].sizeColor = Colors.redAccent;
@@ -54,36 +58,48 @@ class _MyHomePageState extends State<MyHomePage> {
       });
       return;
     }
+
     var response = await http.get(url);
+    //IF RESPONSE WAS SUCCESSFUL BUT HAD SOME ISSUES
     if (response.statusCode == 200) {
+      //IF WEBSITE HAS NO SIZE SOME HOW -> USE 0 AS DEFAULT
       if (response.headers['content-length'] != null) {
         theContentLengthInBytes =
             int.parse(response.headers['content-length'] ?? "");
       }
+      //CHANGING BYTES TO KB
       int theContentLengthInKB = (theContentLengthInBytes ~/ 1000).toInt();
 
+      //IF RESPONSE WAS NOT SUCCESSFUL
       setState(() {
         if (response.statusCode != 200) {
           TheList.theList[index].theSize = 'ERROR ${response.statusCode}';
           TheList.theList[index].sizeColor = Colors.redAccent;
           TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
           TheList.theList[index].doneIconColor = Colors.redAccent;
+          //FOR DISABLING CELLS AFTER PROCESS IS COMPLETE
           TheList.theList[index].isFinishedProcessing = true;
           TheList.theList[index].dissmissDirection = DismissDirection.none;
-        } else if (response.statusCode == 200) {
+        }
+        //IF RESPONSE WAS COMPLETELY SUCCESSFUL
+        else if (response.statusCode == 200) {
           TheList.theList[index].theSize = 'Size: ${theContentLengthInKB}KB';
           TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
           TheList.theList[index].doneIconColor = Colors.greenAccent;
+          //FOR DISABLING CELLS AFTER PROCESS IS COMPLETE
           TheList.theList[index].isFinishedProcessing = true;
           TheList.theList[index].dissmissDirection = DismissDirection.none;
         }
       });
-    } else if (response.statusCode != 200) {
+    }
+    //IF RESPONSE WAS NOT SUCCESSFUL
+    else if (response.statusCode != 200) {
       setState(() {
         TheList.theList[index].theSize = 'ERROR ${response.statusCode}';
         TheList.theList[index].sizeColor = Colors.redAccent;
         TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
         TheList.theList[index].doneIconColor = Colors.redAccent;
+        //FOR DISABLING CELLS AFTER PROCESS IS COMPLETE
         TheList.theList[index].isFinishedProcessing = true;
         TheList.theList[index].dissmissDirection = DismissDirection.none;
       });
@@ -92,6 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   //Function for reordering the list on Drag
   void reorderData(int oldindex, int newindex) {
+    //DO THE REORDERING IF URL IS NOT PROCESSED YET
     if (!TheList.theList[oldindex].isFinishedProcessing) {
       setState(() {
         if (newindex > oldindex) {
@@ -100,7 +117,8 @@ class _MyHomePageState extends State<MyHomePage> {
         final items = TheList.theList.removeAt(oldindex);
         TheList.theList.insert(newindex, items);
       });
-    } else if (TheList.theList[oldindex].isFinishedProcessing) {
+    } //PREVENT REORDERING IF PROCESS IS COMPLETE
+    else if (TheList.theList[oldindex].isFinishedProcessing) {
       showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -121,10 +139,10 @@ class _MyHomePageState extends State<MyHomePage> {
               ));
     }
   }
+
   //Function for resetting the urls to default
   void resetList() {
     setState(() {
-      // TheList.theList = [];
       TheList.theList = [
         URLCell(
           theURL: 'https://www.apple.com',
@@ -227,21 +245,25 @@ class _MyHomePageState extends State<MyHomePage> {
                       children: [
                         Visibility(
                           visible: isStart,
+                          //FOR STARTING THE PROCESS
                           child: TextButton(
                             onPressed: () {
                               isStart = false;
                               isReset = true;
                               setState(() {
+                                //CHANGING THE BTN TEXT WHILE PROCESS IS ACTIVE
                                 btnText = 'Processing';
                               });
 
                               for (var index = 0;
                                   index <= TheList.theList.length - 1;
                                   index++) {
+                                //GETTING EVERY WEBSITE's ICON
                                 TheList.theList[index].favIcon = NetworkImage(
                                     '${TheList.theList[index].theURL}/favicon.ico');
                                 startTheUrlProcessing(index);
                               }
+                              //DELAYING THE CHANGING OF THE BTN TEXT UNTIL PROCESSING IS FINISHED
                               Future.delayed(const Duration(seconds: 2), () {
                                 setState(() {
                                   btnText = 'Reset';
@@ -292,12 +314,14 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                           ),
                         ),
+                        //BTN FOR SHOWING DIALOG TO ADD NEW URL
                         TextButton(
                           onPressed: () {
                             showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
-                                      title: const Text('Add a URL to the list'),
+                                      title:
+                                          const Text('Add a URL to the list'),
                                       content: SizedBox(
                                         width: 100,
                                         height: 50,
@@ -330,14 +354,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                         TextButton(
                                           child: const Text('ADD'),
                                           onPressed: () {
-
+//ADDING THE URL WITH DEFAULT VALUES
                                             setState(() {
                                               TheList.theList.add(URLCell(
                                                 theURL: theTextBoxValue,
-                                                theSize: 'Unknown',
+                                                theSize: 'Unknown Size',
                                                 theIcon: CupertinoIcons.bars,
                                                 favIcon: theWebIcon,
-                                                sizeColor: const Color(0xFF8A8A8A),
+                                                sizeColor:
+                                                    const Color(0xFF8A8A8A),
                                                 doneIconColor:
                                                     const Color(0xFF8A8A8A),
                                                 isFinishedProcessing: false,
@@ -392,8 +417,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       });
 
                       //show msg of deleted Item.
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Url ${index + 1} deleted')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Url ${index + 1} deleted')));
                     },
                     //The Cell skeleton
                     child: Padding(
@@ -486,7 +511,6 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ),
-
         ],
       ),
     );
