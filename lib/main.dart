@@ -34,30 +34,33 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String theTextBoxValue = '';
-  ImageProvider theWebIcon = AssetImage('images/placeholder.png');
-  Color theColor = Color(0xFF8A8A8A);
+  ImageProvider theWebIcon = const AssetImage('images/placeholder.png');
+  Color theColor = const Color(0xFF8A8A8A);
   int theContentLengthInBytes = 0;
   bool isStart = true;
   bool isReset = false;
+  String btnText = 'Processing';
 
-  Future startTheUrl(int index) async {
+  //Function for HTTP GET and updating the UI Accordingly
+  Future startTheUrlProcessing(int index) async {
     var url = Uri.parse(TheList.theList[index].theURL);
-if(!(TheList.theList[index].theURL).contains('http')){
-  TheList.theList[index].sizeColor = Colors.redAccent;
-  TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
-  TheList.theList[index].doneIconColor = Colors.redAccent;
-  return;
-}
+    if (!(TheList.theList[index].theURL).contains('http')) {
+      setState(() {
+        TheList.theList[index].sizeColor = Colors.redAccent;
+        TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
+        TheList.theList[index].doneIconColor = Colors.redAccent;
+        TheList.theList[index].isFinishedProcessing = true;
+        TheList.theList[index].dissmissDirection = DismissDirection.none;
+      });
+      return;
+    }
     var response = await http.get(url);
     if (response.statusCode == 200) {
-      print('STATUS ${response.statusCode}');
-      print(response.headers['content-length']);
       if (response.headers['content-length'] != null) {
         theContentLengthInBytes =
             int.parse(response.headers['content-length'] ?? "");
       }
       int theContentLengthInKB = (theContentLengthInBytes ~/ 1000).toInt();
-      print('$index LENGTH $theContentLengthInBytes');
 
       setState(() {
         if (response.statusCode != 200) {
@@ -65,10 +68,15 @@ if(!(TheList.theList[index].theURL).contains('http')){
           TheList.theList[index].sizeColor = Colors.redAccent;
           TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
           TheList.theList[index].doneIconColor = Colors.redAccent;
-        } else if (response.statusCode == 200)
+          TheList.theList[index].isFinishedProcessing = true;
+          TheList.theList[index].dissmissDirection = DismissDirection.none;
+        } else if (response.statusCode == 200) {
           TheList.theList[index].theSize = 'Size: ${theContentLengthInKB}KB';
-        TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
-        TheList.theList[index].doneIconColor = Colors.greenAccent;
+          TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
+          TheList.theList[index].doneIconColor = Colors.greenAccent;
+          TheList.theList[index].isFinishedProcessing = true;
+          TheList.theList[index].dissmissDirection = DismissDirection.none;
+        }
       });
     } else if (response.statusCode != 200) {
       setState(() {
@@ -76,8 +84,120 @@ if(!(TheList.theList[index].theURL).contains('http')){
         TheList.theList[index].sizeColor = Colors.redAccent;
         TheList.theList[index].theIcon = CupertinoIcons.checkmark_alt;
         TheList.theList[index].doneIconColor = Colors.redAccent;
+        TheList.theList[index].isFinishedProcessing = true;
+        TheList.theList[index].dissmissDirection = DismissDirection.none;
       });
     }
+  }
+
+  //Function for reordering the list on Drag
+  void reorderData(int oldindex, int newindex) {
+    if (!TheList.theList[oldindex].isFinishedProcessing) {
+      setState(() {
+        if (newindex > oldindex) {
+          newindex -= 1;
+        }
+        final items = TheList.theList.removeAt(oldindex);
+        TheList.theList.insert(newindex, items);
+      });
+    } else if (TheList.theList[oldindex].isFinishedProcessing) {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: const Text(
+                  'Can\'t reorder while Processing has finished',
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  )
+                ],
+              ));
+    }
+  }
+  //Function for resetting the urls to default
+  void resetList() {
+    setState(() {
+      // TheList.theList = [];
+      TheList.theList = [
+        URLCell(
+          theURL: 'https://www.apple.com',
+          theSize: 'Unknown Size',
+          theIcon: CupertinoIcons.bars,
+          favIcon: AssetImage('images/placeholder.png'),
+          sizeColor: Color(0xFF8A8A8A),
+          doneIconColor: Color(0xFF8A8A8A),
+          isFinishedProcessing: false,
+          dissmissDirection: DismissDirection.endToStart,
+        ),
+        URLCell(
+          theURL: 'https://www.google.com',
+          theSize: 'Unknown Size',
+          theIcon: CupertinoIcons.bars,
+          favIcon: AssetImage('images/placeholder.png'),
+          sizeColor: Color(0xFF8A8A8A),
+          doneIconColor: Color(0xFF8A8A8A),
+          isFinishedProcessing: false,
+          dissmissDirection: DismissDirection.endToStart,
+        ),
+        URLCell(
+          theURL: 'https://www.hotels.com',
+          theSize: 'Unknown Size',
+          theIcon: CupertinoIcons.bars,
+          favIcon: AssetImage('images/placeholder.png'),
+          sizeColor: Color(0xFF8A8A8A),
+          doneIconColor: Color(0xFF8A8A8A),
+          isFinishedProcessing: false,
+          dissmissDirection: DismissDirection.endToStart,
+        ),
+        URLCell(
+          theURL: 'https://www.microsoft.com',
+          theSize: 'Unknown Size',
+          theIcon: CupertinoIcons.bars,
+          favIcon: AssetImage('images/placeholder.png'),
+          sizeColor: Color(0xFF8A8A8A),
+          doneIconColor: Color(0xFF8A8A8A),
+          isFinishedProcessing: false,
+          dissmissDirection: DismissDirection.endToStart,
+        ),
+        URLCell(
+          theURL: 'https://www.tesla.com',
+          theSize: 'Unknown Size',
+          theIcon: CupertinoIcons.bars,
+          favIcon: AssetImage('images/placeholder.png'),
+          sizeColor: Color(0xFF8A8A8A),
+          doneIconColor: Color(0xFF8A8A8A),
+          isFinishedProcessing: false,
+          dissmissDirection: DismissDirection.endToStart,
+        ),
+        URLCell(
+          theURL: 'https://www.uber.com',
+          theSize: 'Unknown Size',
+          theIcon: CupertinoIcons.bars,
+          favIcon: AssetImage('images/placeholder.png'),
+          sizeColor: Color(0xFF8A8A8A),
+          doneIconColor: Color(0xFF8A8A8A),
+          isFinishedProcessing: false,
+          dissmissDirection: DismissDirection.endToStart,
+        ),
+        URLCell(
+          theURL: 'https://www.yahoo.com',
+          theSize: 'Unknown Size',
+          theIcon: CupertinoIcons.bars,
+          favIcon: AssetImage('images/placeholder.png'),
+          sizeColor: Color(0xFF8A8A8A),
+          doneIconColor: Color(0xFF8A8A8A),
+          isFinishedProcessing: false,
+          dissmissDirection: DismissDirection.endToStart,
+        ),
+      ];
+    });
   }
 
   @override
@@ -111,18 +231,25 @@ if(!(TheList.theList[index].theURL).contains('http')){
                             onPressed: () {
                               isStart = false;
                               isReset = true;
-                              print('Btn Pressed');
+                              setState(() {
+                                btnText = 'Processing';
+                              });
 
                               for (var index = 0;
                                   index <= TheList.theList.length - 1;
                                   index++) {
                                 TheList.theList[index].favIcon = NetworkImage(
                                     '${TheList.theList[index].theURL}/favicon.ico');
-                                startTheUrl(index);
+                                startTheUrlProcessing(index);
                               }
+                              Future.delayed(const Duration(seconds: 2), () {
+                                setState(() {
+                                  btnText = 'Reset';
+                                });
+                              });
                             },
                             child: const Text(
-                              'START',
+                              'Start',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -145,26 +272,11 @@ if(!(TheList.theList[index].theURL).contains('http')){
                             onPressed: () {
                               isStart = true;
                               isReset = false;
-                              for (var index = 0;
-                                  index <= TheList.theList.length - 1;
-                                  index++) {
-                                TheList.theList[index].favIcon =
-                                    AssetImage('images/placeholder.png');
-                                TheList.theList[index].theIcon =
-                                    CupertinoIcons.bars;
-                                TheList.theList[index].doneIconColor =
-                                    Color(0xFF8A8A8A);
-                                TheList.theList[index].sizeColor =
-                                    Color(0xFF8A8A8A);
-                                TheList.theList[index].theSize = 'Unknown Size';
-                              }
-                              setState(() {
-
-                              });
+                              resetList();
                             },
-                            child: const Text(
-                              'RESET',
-                              style: TextStyle(
+                            child: Text(
+                              btnText,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
                               ),
@@ -182,14 +294,13 @@ if(!(TheList.theList[index].theURL).contains('http')){
                         ),
                         TextButton(
                           onPressed: () {
-                            print('Add Btn Pressed');
                             showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
-                                      title: Text('Add a URL to the list'),
-                                      content: Container(
+                                      title: const Text('Add a URL to the list'),
+                                      content: SizedBox(
                                         width: 100,
-                                        height: 150,
+                                        height: 50,
                                         child: TextField(
                                           decoration: const InputDecoration(
                                             labelText: 'Link:',
@@ -209,7 +320,7 @@ if(!(TheList.theList[index].theURL).contains('http')){
                                             hintText: 'https://www.google.com',
                                             fillColor: Color(0xFF1C1D2F),
                                           ),
-                                          cursorColor: Color(0xFF1C1D2F),
+                                          cursorColor: const Color(0xFF1C1D2F),
                                           onChanged: (value) {
                                             theTextBoxValue = value;
                                           },
@@ -217,9 +328,8 @@ if(!(TheList.theList[index].theURL).contains('http')){
                                       ),
                                       actions: [
                                         TextButton(
-                                          child: Text('ADD'),
+                                          child: const Text('ADD'),
                                           onPressed: () {
-                                            print(theTextBoxValue);
 
                                             setState(() {
                                               TheList.theList.add(URLCell(
@@ -227,9 +337,12 @@ if(!(TheList.theList[index].theURL).contains('http')){
                                                 theSize: 'Unknown',
                                                 theIcon: CupertinoIcons.bars,
                                                 favIcon: theWebIcon,
-                                                sizeColor: Color(0xFF8A8A8A),
+                                                sizeColor: const Color(0xFF8A8A8A),
                                                 doneIconColor:
-                                                    Color(0xFF8A8A8A),
+                                                    const Color(0xFF8A8A8A),
+                                                isFinishedProcessing: false,
+                                                dissmissDirection:
+                                                    DismissDirection.endToStart,
                                               ));
                                             });
                                             Navigator.pop(context);
@@ -260,85 +373,120 @@ if(!(TheList.theList[index].theURL).contains('http')){
                 ),
               )),
 
-          //THE LIST
+          //The Url ListView
           Expanded(
-            child: ListView.builder(
-              itemCount: TheList.theList.length,
+            child: ReorderableListView(
               scrollDirection: Axis.vertical,
-              itemBuilder: (BuildContext context, int index) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 10.0, right: 10),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(width: 1.0, color: Colors.black38),
-                    )),
+              onReorder: reorderData,
+              children: [
+                for (int index = 0;
+                    index <= TheList.theList.length - 1;
+                    index++)
+                  //For Dragging to delete
+                  Dismissible(
+                    direction: TheList.theList[index].dissmissDirection,
+                    key: ValueKey(TheList.theList[index]),
+                    onDismissed: (direction) {
+                      setState(() {
+                        TheList.theList.removeAt(index);
+                      });
+
+                      //show msg of deleted Item.
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Url ${index + 1} deleted')));
+                    },
+                    //The Cell skeleton
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
+                      padding: const EdgeInsets.only(left: 10.0, right: 10),
+                      child: Container(
+                        decoration: const BoxDecoration(
+                            border: Border(
+                          bottom: BorderSide(width: 1.0, color: Colors.black38),
+                        )),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                        color: Colors.black38, width: 1.0),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: Image(
-                                        image: TheList.theList[index].favIcon),
-                                  ),
-                                ),
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    TheList.theList[index].theURL,
-                                    style: const TextStyle(
-                                      fontSize: 15,
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: Colors.black38, width: 1.0),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: Image(
+                                            image:
+                                                TheList.theList[index].favIcon),
+                                      ),
                                     ),
                                   ),
-                                  Text(
-                                    TheList.theList[index].theSize,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: TheList.theList[index].sizeColor,
-                                    ),
-                                  ),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        TheList.theList[index].theURL,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      Text(
+                                        TheList.theList[index].theSize,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color:
+                                              TheList.theList[index].sizeColor,
+                                        ),
+                                      ),
+                                    ],
+                                  )
                                 ],
-                              )
+                              ),
+                              Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: TheList.theList[index].doneIconColor,
+                                  ),
+                                  child: Icon(
+                                    TheList.theList[index].theIcon,
+                                    color: Colors.white,
+                                  )),
                             ],
                           ),
-                          Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: TheList.theList[index].doneIconColor,
-                              ),
-                              child: Icon(
-                                TheList.theList[index].theIcon,
-                                color: Colors.white,
-                              )),
-                        ],
+                        ),
                       ),
                     ),
+                    background: Container(
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 20),
+                              )),
+                        ),
+                        color: Colors.redAccent),
                   ),
-                );
-              },
+              ],
             ),
           ),
+
         ],
       ),
     );

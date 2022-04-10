@@ -11,6 +11,10 @@ URLCell({
   required this.favIcon,
   required this.sizeColor,
   required this.doneIconColor,
+  required this.isFinishedProcessing,
+  required this.dissmissDirection,
+
+
 });
    ImageProvider favIcon;
    String theURL;
@@ -18,5 +22,7 @@ URLCell({
    IconData theIcon;
    Color sizeColor;
    Color doneIconColor;
+   bool isFinishedProcessing;
+   DismissDirection dissmissDirection;
 
 }
